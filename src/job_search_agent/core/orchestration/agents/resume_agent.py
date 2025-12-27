@@ -1,17 +1,18 @@
-from job_search_agent.agents.base import BaseAgent
-from job_search_agent.prompts.resume_prompts import RESUME_PARSER_PROMPT
-from job_search_agent.models.resume_models import ResumeData
+from job_search_agent.core.llm_gateways.prompts.resume_prompts import RESUME_PARSER_PROMPT
+from job_search_agent.core.orchestration.agents.base import BaseAgent
+from job_search_agent.core.orchestration.models.resume_models import Resume
+
 
 class ResumeAgent(BaseAgent):
     def __init__(self):
         super().__init__()
         self.prompt = RESUME_PARSER_PROMPT
-        self.structured_llm = self.get_structured_llm(ResumeData)
+        self.structured_llm = self.get_structured_llm(Resume)
 
-    def parse_cv(self, cv_text: str) -> ResumeData:
+    def parse_cv(self, cv_text: str) -> Resume:
         return self.run(cv=cv_text)
 
-    def run(self, cv: str) -> ResumeData:
+    def run(self, cv: str) -> Resume:
         chain = self.prompt | self.structured_llm
         response = chain.invoke({"cv": cv})
         print(f"Extracted Data: {response}")

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
 
-class ResumeData(BaseModel):
+class Resume(BaseModel):
     titles: List[str] = Field(description="Array of job titles held or targeted")
     skills: List[str] = Field(description="Array of technical and soft skills")
     seniority: str = Field(description="Seniority level (e.g., Junior, Mid, Senior, Lead)")
