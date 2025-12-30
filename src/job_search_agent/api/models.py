@@ -1,0 +1,26 @@
+from pydantic import BaseModel, Field
+from typing import List
+from job_search_agent.core.orchestration.models.job_vacancy import JobVacancy
+from job_search_agent.core.orchestration.models.resume_models import Resume
+
+class CVRequest(BaseModel):
+    cv_text: str = Field(
+        ..., 
+        description="The full text content of the candidate's CV", 
+        example="I am a software engineer with 5 years of experience in React and Python..."
+    )
+
+class OptimizationRequest(BaseModel):
+    job_index: int = Field(
+        ..., 
+        description="The index of the job from the ranked list to optimize for", 
+        example=0
+    )
+
+class JobResponse(BaseModel):
+    job: JobVacancy
+    score: float = Field(..., description="Matching score (0.0 to 1.0)", example=0.85)
+
+class SearchResponse(BaseModel):
+    resume: Resume
+    ranked_jobs: List[JobResponse]

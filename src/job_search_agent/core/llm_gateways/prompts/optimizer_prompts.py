@@ -15,6 +15,9 @@ JOB_OPTIMIZER_PROMPT = ChatPromptTemplate.from_messages([
         - Explain how well the candidate matches the role.
         - Provide actionable tips to tweak the CV (which skills to highlight, what to add).
         - Write a professional, concise, and compelling cover letter.
+        - Provide a current score and an optimized score for the CV.
+
+        IMPORTANT: If the job vacancy description is in Azerbaijani, you must provide your entire response (explanation, tips, cover letter) in Azerbaijani.
         """
     ),
     (

@@ -1,15 +1,14 @@
 import asyncio
-import math
 from typing import List, Tuple
 from langchain_huggingface import HuggingFaceEmbeddings
 from job_search_agent.core.orchestration.models.resume_models import Resume
 
 from job_search_agent.configs.setting import get_settings
 from job_search_agent.core.orchestration.agents.base import BaseAgent
-from job_search_agent.core.orchestration.agents.resume_agent import ResumeAgent
 from job_search_agent.core.orchestration.tools.search_tool.ddg_search_tool import DuckDuckGoSearchTool
 from job_search_agent.core.orchestration.tools.website_scrapper.engine import ScrapingEngine
 from job_search_agent.core.orchestration.models.job_vacancy import JobVacancy
+from job_search_agent.utils.cosine_similarity import cosine_similarity
 
 class ResumeRankingAgent(BaseAgent): 
     def __init__(self):
@@ -21,14 +20,6 @@ class ResumeRankingAgent(BaseAgent):
             model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
         )
     
-    def _cosine_similarity(self, v1: List[float], v2: List[float]) -> float:
-        """Calculate cosine similarity between two vectors."""
-        dot_product = sum(a * b for a, b in zip(v1, v2))
-        magnitude1 = math.sqrt(sum(a * a for a in v1))
-        magnitude2 = math.sqrt(sum(b * b for b in v2))
-        if not magnitude1 or not magnitude2:
-            return 0.0
-        return dot_product / (magnitude1 * magnitude2)
 
     def _build_cv_profile(self, cv: Resume) -> str:
         """Create a clean, structured profile from CV data."""
@@ -36,7 +27,6 @@ class ResumeRankingAgent(BaseAgent):
 
     def _build_job_profile(self, job: JobVacancy) -> str:
         """Create a clean, structured profile from Job data, limiting noise."""
-        # Use requirements primarily, fallback to title + snippet if empty
         if not job:
             return ""
         reqs = job.requirements if job.requirements else ""
@@ -47,7 +37,6 @@ class ResumeRankingAgent(BaseAgent):
         cv_profile = self._build_cv_profile(cv)
         cv_embedding = self.embeddings.embed_query(cv_profile)
         
-        # Ensure we have a clean list of titles (handle case where user might pass "Title1, Title2" as one string)
         actual_titles = []
         for t in cv.titles:
             if "," in t:
@@ -55,14 +44,11 @@ class ResumeRankingAgent(BaseAgent):
             else:
                 actual_titles.append(t.strip())
         
-        # Deduplicate titles
         actual_titles = list(dict.fromkeys(actual_titles))
 
-        # Search for jobs using all titles concurrently
         async def search_all_titles(titles: List[str]) -> List[str]:
             tasks = [asyncio.to_thread(self.web_searcher.search, title.lower()) for title in titles]
             results = await asyncio.gather(*tasks)
-            # Flatten and deduplicate
             unique_urls = set()
             for url_list in results:
                 if isinstance(url_list, list):
@@ -82,9 +68,6 @@ class ResumeRankingAgent(BaseAgent):
             return await asyncio.gather(*tasks, return_exceptions=True)
             
         print(f"Scraping {len(urls)} potential jobs...")
-        # Since scrape_all is async and we are in a sync run() method, 
-        # we can combine it into the same event loop if we wanted, 
-        # but the current structure uses asyncio.run()
         results = asyncio.run(scrape_all(urls))
         jobs = [job for job in results if isinstance(job, JobVacancy) and job is not None]
         
@@ -98,7 +81,7 @@ class ResumeRankingAgent(BaseAgent):
         
         ranked_jobs = []
         for job, job_embedding in zip(jobs, job_embeddings):
-            score = self._cosine_similarity(cv_embedding, job_embedding)
+            score = cosine_similarity(cv_embedding, job_embedding)
             ranked_jobs.append((job, score))
             
         ranked_jobs.sort(key=lambda x: x[1], reverse=True)
@@ -106,9 +89,11 @@ class ResumeRankingAgent(BaseAgent):
         print(f"Successfully ranked {len(ranked_jobs)} jobs.")
         return ranked_jobs
 
+        
 if __name__ == "__main__":
     from job_search_agent.core.orchestration.models.resume_models import Resume
     ranker = ResumeRankingAgent()
+    from job_search_agent.core.orchestration.agents.resume_agent import ResumeAgent
     resume_agent = ResumeAgent()
     dummy_cv = Resume(
         titles=['Frontend Developer', 'Frontend Proqramçı', 'frontend developer'], 

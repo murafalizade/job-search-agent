@@ -20,10 +20,21 @@ dependencies = [
     "uvicorn>=0.27.0",
     "langchain-huggingface>=1.2.0",
     "sentence-transformers>=5.2.0",
+    "langgraph>=1.0.5",
+    "langsmith>=0.5.1",
+    "torch",
 ]
 
 [project.scripts]
 job-search-agent = "job_search_agent:main"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [build-system]
 requires = ["uv_build>=0.9.13,<0.10.0"]
