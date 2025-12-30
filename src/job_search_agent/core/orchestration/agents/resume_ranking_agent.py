@@ -1,7 +1,9 @@
 import asyncio
 import math
 from typing import List, Tuple
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from job_search_agent.core.orchestration.models.resume_models import Resume
+
 from job_search_agent.configs.setting import get_settings
 from job_search_agent.core.orchestration.agents.base import BaseAgent
 from job_search_agent.core.orchestration.agents.resume_agent import ResumeAgent
@@ -15,10 +17,8 @@ class ResumeRankingAgent(BaseAgent):
         settings = get_settings()
         self.web_searcher = DuckDuckGoSearchTool()
         self.scraper = ScrapingEngine()
-        self.resume_agent = ResumeAgent()
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
-            google_api_key=settings.GOOGLE_API_KEY.get_secret_value()
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
         )
     
     def _cosine_similarity(self, v1: List[float], v2: List[float]) -> float:
@@ -30,15 +30,48 @@ class ResumeRankingAgent(BaseAgent):
             return 0.0
         return dot_product / (magnitude1 * magnitude2)
 
-    def run(self, cv: str) -> List[Tuple[JobVacancy, float]]:
-        print("Parsing CV...")
-        parsed_resume = self.resume_agent.parse_cv(cv)
-        
-        cv_profile = f"{' '.join(parsed_resume.titles)} {' '.join(parsed_resume.skills)} {' '.join(parsed_resume.keywords)}"
+    def _build_cv_profile(self, cv: Resume) -> str:
+        """Create a clean, structured profile from CV data."""
+        return f"Professional Titles: {', '.join(cv.titles)}\n Skills: {', '.join(cv.skills)}"
+
+    def _build_job_profile(self, job: JobVacancy) -> str:
+        """Create a clean, structured profile from Job data, limiting noise."""
+        # Use requirements primarily, fallback to title + snippet if empty
+        if not job:
+            return ""
+        reqs = job.requirements if job.requirements else ""
+        desc_snippet = job.description[:300] if not reqs else job.description[:150]
+        return f"Job Title: {job.title}\nRequirements: {reqs}\nDescription: {desc_snippet}"
+
+    def run(self, cv: Resume) -> List[Tuple[JobVacancy, float]]:
+        cv_profile = self._build_cv_profile(cv)
         cv_embedding = self.embeddings.embed_query(cv_profile)
         
-        print(f"Searching for jobs matching: {parsed_resume.titles[0] if parsed_resume.titles else 'CV'}...")
-        urls = self.web_searcher.search(cv_profile)
+        # Ensure we have a clean list of titles (handle case where user might pass "Title1, Title2" as one string)
+        actual_titles = []
+        for t in cv.titles:
+            if "," in t:
+                actual_titles.extend([item.strip() for item in t.split(",")])
+            else:
+                actual_titles.append(t.strip())
+        
+        # Deduplicate titles
+        actual_titles = list(dict.fromkeys(actual_titles))
+
+        # Search for jobs using all titles concurrently
+        async def search_all_titles(titles: List[str]) -> List[str]:
+            tasks = [asyncio.to_thread(self.web_searcher.search, title.lower()) for title in titles]
+            results = await asyncio.gather(*tasks)
+            # Flatten and deduplicate
+            unique_urls = set()
+            for url_list in results:
+                if isinstance(url_list, list):
+                    unique_urls.update(url_list)
+            print(f"Found {len(unique_urls)} URLs.")
+            return list(unique_urls)
+
+        print(f"Searching for jobs with titles: {', '.join(actual_titles)}...")
+        urls = asyncio.run(search_all_titles(actual_titles))
         
         if not urls:
             print("No URLs found.")
@@ -49,15 +82,18 @@ class ResumeRankingAgent(BaseAgent):
             return await asyncio.gather(*tasks, return_exceptions=True)
             
         print(f"Scraping {len(urls)} potential jobs...")
+        # Since scrape_all is async and we are in a sync run() method, 
+        # we can combine it into the same event loop if we wanted, 
+        # but the current structure uses asyncio.run()
         results = asyncio.run(scrape_all(urls))
-        jobs = [job for job in results if isinstance(job, JobVacancy)]
+        jobs = [job for job in results if isinstance(job, JobVacancy) and job is not None]
         
         if not jobs:
             print("No valid jobs scraped.")
             return []
         
-        print(f"Ranking {len(jobs)} jobs using embeddings...")
-        job_profiles = [f"{job.title} {job.requirements} {job.description[:500]}" for job in jobs]
+        print(f"Ranking {len(jobs)} jobs using multilingual embeddings...")
+        job_profiles = [self._build_job_profile(job) for job in jobs]
         job_embeddings = self.embeddings.embed_documents(job_profiles)
         
         ranked_jobs = []
@@ -69,3 +105,17 @@ class ResumeRankingAgent(BaseAgent):
         
         print(f"Successfully ranked {len(ranked_jobs)} jobs.")
         return ranked_jobs
+
+if __name__ == "__main__":
+    from job_search_agent.core.orchestration.models.resume_models import Resume
+    ranker = ResumeRankingAgent()
+    resume_agent = ResumeAgent()
+    dummy_cv = Resume(
+        titles=['Frontend Developer', 'Frontend Proqramçı', 'frontend developer'], 
+        skills=[], seniority='Mid', years_experience=5, preferred_locations=[], keywords=['software engineer', '5 years experience']
+    )
+    result = ranker.run(dummy_cv)
+    for job, score in result:
+        if job:
+            print(f"Score: {score:.4f} | Title: {job.title} | Company: {job.company}")
+       

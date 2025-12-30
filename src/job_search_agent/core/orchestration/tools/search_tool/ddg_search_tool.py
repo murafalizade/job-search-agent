@@ -8,7 +8,7 @@ from job_search_agent.core.orchestration.tools.search_tool.trusted_websites impo
 
 
 class DuckDuckGoSearchTool(BaseSearchTool):
-    def __init__(self, max_results: int = 10):
+    def __init__(self, max_results: int = 20):
         self.client = DuckDuckGoSearchResults(
             num_results=max_results, 
             output_format='json', 
@@ -22,33 +22,33 @@ class DuckDuckGoSearchTool(BaseSearchTool):
         Args:
             query: Search query (e.g., "frontend developer")
         """
-        urls = []
+        import concurrent.futures
         
-        for website in TRUSTED_WEBSITES:            
-            web_results_json = self.client.run(f"site:{website} {query}")
-                    
-            web_results = json.loads(web_results_json)
-                    
-            for entry in web_results:
-                url = entry.get("link", "")
-                        
-                if not is_from_trusted_domain(url):
-                    print(f"Filtered out: {url} (not from {website})")
-                    continue
-                        
-                url = entry.get("link", "")
-                if url in urls:
-                    print(f"Dublicated link: {url}")
-                    break
-                urls.append(url)
-                            
-        return urls
+        def search_website(website: str) -> list[str]:
+            try:
+                web_results_json = self.client.run(f"site:{website} {query}")
+                web_results = json.loads(web_results_json)
+                
+                site_urls = []
+                for entry in web_results:
+                    url = entry.get("link", "")
+                    if url and is_from_trusted_domain(url):
+                        site_urls.append(url)
+                return site_urls
+            except Exception as e:
+                print(f"Error searching {website}: {e}")
+                return []
 
-if __name__ == "__main__":
-    tool = DuckDuckGoSearchTool(max_results=10)
-    vacancies = tool.search("frontend developer")    
-    print(f"\n\nTotal vacancies found: {len(vacancies)}")    
-    print("\n" + "="*70)
-    print("SERIALIZED JSON:")
-    print("="*70)
-    print(vacancies)
+        all_urls = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_site = {executor.submit(search_website, site): site for site in TRUSTED_WEBSITES}
+            for future in concurrent.futures.as_completed(future_to_site):
+                site_urls = future.result()
+                for url in site_urls:
+                    if url not in all_urls:
+                        all_urls.append(url)
+                        print(f"Added link: {url}")
+                    else:
+                        print(f"Dublicated link: {url}")
+                            
+        return all_urls

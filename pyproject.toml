@@ -18,6 +18,8 @@ dependencies = [
     "beautifulsoup4>=4.12.3",
     "fastapi>=0.109.0",
     "uvicorn>=0.27.0",
+    "langchain-huggingface>=1.2.0",
+    "sentence-transformers>=5.2.0",
 ]
 
 [project.scripts]
