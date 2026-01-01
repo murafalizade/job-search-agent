@@ -16,19 +16,19 @@ class AgentState(TypedDict):
     selected_job_index: Optional[int]
     optimization_result: Optional[OptimizationResult]
 
-def parse_cv_node(state: AgentState):
+async def parse_cv_node(state: AgentState):
     """Parses the CV text into a structured Resume object."""
     agent = ResumeAgent()
-    resume = agent.parse_cv(state["cv_text"])
+    resume = await agent.parse_cv(state["cv_text"])
     return {"resume": resume}
 
-def rank_jobs_node(state: AgentState):
+async def rank_jobs_node(state: AgentState):
     """Searches and ranks jobs based on the parsed Resume."""
     agent = ResumeRankingAgent()
-    ranked_jobs = agent.run(state["resume"])
+    ranked_jobs = await agent.run(state["resume"])
     return {"ranked_jobs": ranked_jobs}
 
-def optimize_job_node(state: AgentState):
+async def optimize_job_node(state: AgentState):
     """Optimizes a specific job application."""
     agent = JobOptimizerAgent()
     job_index = state["selected_job_index"]
@@ -37,7 +37,7 @@ def optimize_job_node(state: AgentState):
         raise ValueError("Invalid job index for optimization.")
         
     selected_job = state["ranked_jobs"][job_index][0]
-    result = agent.run(job=selected_job, resume=state["resume"])
+    result = await agent.run(job=selected_job, resume=state["resume"])
     return {"optimization_result": result}
 
 def create_job_search_graph():

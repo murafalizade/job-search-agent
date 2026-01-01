@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter, HTTPException, status, Depends
-from job_search_agent.api.models import CVRequest, SearchResponse, JobResponse, OptimizationRequest
+from job_search_agent.api.models import CVRequest, ProcessCVResponse, JobResponse, OptimizationRequest, FindJobsResponse
 from job_search_agent.api.dependencies import get_orchestrator
 from job_search_agent.core.orchestration.orchestrator import JobSearchOrchestrator
 from job_search_agent.core.orchestration.models.optimization_result import OptimizationResult
@@ -9,35 +9,55 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/core", tags=["Core"])
 
 @router.post("/process-cv", 
-             response_model=SearchResponse, 
+             response_model=ProcessCVResponse, 
              status_code=status.HTTP_200_OK,
-             summary="Parse CV and find matching jobs")
+             summary="Parse CV into structured data")
 async def process_cv(
     request: CVRequest, 
     orchestrator: JobSearchOrchestrator = Depends(get_orchestrator)
 ):
     """
-    Takes raw CV text, parses it into structured data, and searches for matching job vacancies 
-    across local job boards using multilingual embeddings.
+    Takes raw CV text and parses it into structured data (Resume object).
     """
     try:
-        logger.info("Processing new CV upload...")
-        resume, ranked_jobs = orchestrator.process_cv(request.cv_text)
+        logger.info("Parsing CV...")
+        resume = await orchestrator.process_cv(request.cv_text)
+        return ProcessCVResponse(resume=resume)
+    except Exception as e:
+        logger.error(f"Error parsing CV: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Failed to parse CV: {str(e)}"
+        )
+
+@router.post("/find-jobs", 
+             response_model=FindJobsResponse, 
+             status_code=status.HTTP_200_OK,
+             summary="Find matching jobs based on processed CV")
+async def find_jobs(
+    orchestrator: JobSearchOrchestrator = Depends(get_orchestrator)
+):
+    """
+    Searches for matching job vacancies across local job boards using the currently parsed Resume.
+    Requires /process-cv to have been called first.
+    """
+    try:
+        logger.info("Searching for matching jobs...")
+        ranked_jobs = await orchestrator.find_jobs()
         
         formatted_jobs = [
             JobResponse(job=job, score=score) 
             for job, score in ranked_jobs
         ]
         
-        return SearchResponse(
-            resume=resume,
-            ranked_jobs=formatted_jobs
-        )
+        return FindJobsResponse(ranked_jobs=formatted_jobs)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        logger.error(f"Error processing CV: {str(e)}")
+        logger.error(f"Error finding jobs: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail=f"Failed to process CV: {str(e)}"
+            detail=f"Failed to find jobs: {str(e)}"
         )
 
 @router.post("/optimize-job", 
@@ -53,7 +73,7 @@ async def optimize_job(
     """
     try:
         logger.info(f"Optimizing for job index: {request.job_index}")
-        result = orchestrator.optimize_job(request.job_index)
+        result = await orchestrator.optimize_job(request.job_index)
         return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

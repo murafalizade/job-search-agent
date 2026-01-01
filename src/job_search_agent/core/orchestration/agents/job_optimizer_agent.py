@@ -10,9 +10,9 @@ class JobOptimizerAgent(BaseAgent):
         self.prompt = JOB_OPTIMIZER_PROMPT
         self.structured_llm = self.get_structured_llm(OptimizationResult)
     
-    def run(self, job: JobVacancy, resume: Resume) -> OptimizationResult:
+    async def run(self, job: JobVacancy, resume: Resume) -> OptimizationResult:
         chain = self.prompt | self.structured_llm
-        response = chain.invoke({
+        response = await chain.ainvoke({
             "job": job.model_dump(),
             "resume": resume.model_dump()
         })

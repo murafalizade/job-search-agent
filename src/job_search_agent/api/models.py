@@ -21,6 +21,8 @@ class JobResponse(BaseModel):
     job: JobVacancy
     score: float = Field(..., description="Matching score (0.0 to 1.0)", example=0.85)
 
-class SearchResponse(BaseModel):
+class ProcessCVResponse(BaseModel):
     resume: Resume
+
+class FindJobsResponse(BaseModel):
     ranked_jobs: List[JobResponse]

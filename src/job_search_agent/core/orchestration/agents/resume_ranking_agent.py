@@ -33,7 +33,7 @@ class ResumeRankingAgent(BaseAgent):
         desc_snippet = job.description[:300] if not reqs else job.description[:150]
         return f"Job Title: {job.title}\nRequirements: {reqs}\nDescription: {desc_snippet}"
 
-    def run(self, cv: Resume) -> List[Tuple[JobVacancy, float]]:
+    async def run(self, cv: Resume) -> List[Tuple[JobVacancy, float]]:
         cv_profile = self._build_cv_profile(cv)
         cv_embedding = self.embeddings.embed_query(cv_profile)
         
@@ -57,7 +57,7 @@ class ResumeRankingAgent(BaseAgent):
             return list(unique_urls)
 
         print(f"Searching for jobs with titles: {', '.join(actual_titles)}...")
-        urls = asyncio.run(search_all_titles(actual_titles))
+        urls = await search_all_titles(actual_titles)
         
         if not urls:
             print("No URLs found.")
@@ -68,7 +68,7 @@ class ResumeRankingAgent(BaseAgent):
             return await asyncio.gather(*tasks, return_exceptions=True)
             
         print(f"Scraping {len(urls)} potential jobs...")
-        results = asyncio.run(scrape_all(urls))
+        results = await scrape_all(urls)
         jobs = [job for job in results if isinstance(job, JobVacancy) and job is not None]
         
         if not jobs:
