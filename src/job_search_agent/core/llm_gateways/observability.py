@@ -15,7 +15,6 @@ class AgentLogger:
         self.logger = logging.getLogger("JobSearchAgent")
         self.logger.setLevel(logging.INFO)
         
-        # File handler
         fh = logging.FileHandler(log_file)
         self.logger.addHandler(fh)
 
@@ -36,9 +35,9 @@ def init_langsmith():
         os.environ["LANGCHAIN_API_KEY"] = settings.LANGCHAIN_API_KEY.get_secret_value()
         os.environ["LANGCHAIN_PROJECT"] = settings.LANGCHAIN_PROJECT
         os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGCHAIN_ENDPOINT
-        print(f"🚀 LangSmith Tracing enabled for project: {settings.LANGCHAIN_PROJECT}")
+        print(f"LangSmith Tracing enabled for project: {settings.LANGCHAIN_PROJECT}")
     else:
-        print("ℹ️ LangSmith Tracing is disabled.")
+        print("ℹLangSmith Tracing is disabled.")
 
 # Global instance
 telemetry = AgentLogger()

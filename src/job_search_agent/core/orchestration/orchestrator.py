@@ -54,4 +54,4 @@ class JobSearchOrchestrator:
         return self.state["optimization_result"]
 
     def get_usage_report(self) -> str:
-        return self.gateway.cost_controller.get_report()
+        return self.gateway.cost_controller.get_spent()

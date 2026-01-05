@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     GEMINI_PROJECT_ID: str
     GOOGLE_API_KEY: SecretStr
     
-    # LangSmith Configuration
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: Optional[SecretStr] = None
     LANGCHAIN_PROJECT: str = "job-search-agent"
