@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
 from job_search_agent.api.models import CVRequest, ProcessCVResponse, JobResponse, OptimizationRequest, FindJobsResponse
 from job_search_agent.api.dependencies import get_orchestrator
 from job_search_agent.core.orchestration.orchestrator import JobSearchOrchestrator
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/core", tags=["Core"])
              status_code=status.HTTP_200_OK,
              summary="Parse CV into structured data")
 async def process_cv(
-    request: CVRequest, 
+    file: UploadFile,
     orchestrator: JobSearchOrchestrator = Depends(get_orchestrator)
 ):
     """
@@ -21,7 +21,8 @@ async def process_cv(
     """
     try:
         logger.info("Parsing CV...")
-        resume = await orchestrator.process_cv(request.cv_text)
+        file_bytes = await file.read()
+        resume = await orchestrator.process_cv(file_bytes)
         return ProcessCVResponse(resume=resume)
     except Exception as e:
         logger.error(f"Error parsing CV: {str(e)}")

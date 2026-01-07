@@ -1,15 +1,16 @@
 import json
 import time
 from collections import deque
+from pathlib import Path
 
 from job_search_agent.core.llm_gateways.cost_controller import CostController
+from job_search_agent.utils.helper import get_config_file
 
 
 class ModelRouter:
-    def __init__(self, config_path='config.json'):
-        with open(config_path) as f:
-            self.config = json.load(f)
-        self.controller = CostController(self.config)
+    def __init__(self):
+        self.config = get_config_file()
+        self.controller = CostController()
 
         # In-memory request trackers: { "model_name": deque([timestamps]) }
         self.history = {model: deque() for model in self.config['models']}

@@ -1,9 +1,12 @@
+from job_search_agent.utils.helper import get_config_file
+
+
 class CostController:
     # Hardcoded global state for the session (Simulates a DB)
     _total_spent = 0.0
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
+        config = get_config_file()
         self.pricing = config['models']
         self.opt_features = config['optimization_features']
         self.budget_limit = 10.00

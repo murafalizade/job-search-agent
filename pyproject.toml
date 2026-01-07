@@ -23,6 +23,7 @@ dependencies = [
     "langgraph>=1.0.5",
     "langsmith>=0.5.1",
     "torch",
+    "python-multipart>=0.0.21",
 ]
 
 [project.scripts]

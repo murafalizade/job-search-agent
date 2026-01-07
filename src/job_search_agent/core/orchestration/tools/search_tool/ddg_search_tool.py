@@ -5,8 +5,6 @@ from langchain_community.tools import DuckDuckGoSearchResults
 from job_search_agent.core.orchestration.tools.search_tool.base import BaseSearchTool
 from job_search_agent.core.orchestration.tools.search_tool.trusted_websites import TRUSTED_WEBSITES, is_from_trusted_domain
 
-
-
 class DuckDuckGoSearchTool(BaseSearchTool):
     def __init__(self, max_results: int = 20):
         self.client = DuckDuckGoSearchResults(

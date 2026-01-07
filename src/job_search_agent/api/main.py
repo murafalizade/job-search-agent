@@ -11,31 +11,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic
+async def lifespan(_: FastAPI):
     logger.info("Starting Job Search Agent API...")
-    # init_langsmith()
+    init_langsmith()
     yield
-    # Shutdown logic
     logger.info("Shutting down Job Search Agent API...")
 
 app = FastAPI(
-    title="🚀 Job Search Agent API",
+    title="Job Search Agent API",
     description="""
     An advanced AI-powered API for the Azerbaijan job market.
     
-    ### Features:
-    * CV Parsing: Extract skills and intent from raw text.
-    * Job Matching: Find and rank jobs using multilingual embeddings.
-    * Application Optimization: Generate tailored cover letters and CV tips.
-    * Cost Tracking: Monitor LLM usage and expenses in real-time.
+    Features:
+    CV Parsing: Extract skills and intent from raw text.
+    Job Matching: Find and rank jobs using multilingual embeddings.
+    Application Optimization: Generate tailored cover letters and CV tips.
+    Cost Tracking: Monitor LLM usage and expenses in real-time.
     """,
     version="1.1.0",
     lifespan=lifespan,
-    contact={
-        "name": "Support",
-        "email": "support@example.com",
-    },
 )
 
 # Enable CORS

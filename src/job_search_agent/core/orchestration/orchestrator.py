@@ -4,6 +4,7 @@ from job_search_agent.core.orchestration.models.resume_models import Resume
 from job_search_agent.core.orchestration.models.job_vacancy import JobVacancy
 from job_search_agent.core.orchestration.models.optimization_result import OptimizationResult
 from job_search_agent.core.llm_gateways.gateway import get_gateway
+from job_search_agent.utils.resume_parser import resume_parser
 
 
 class JobSearchOrchestrator:
@@ -19,9 +20,9 @@ class JobSearchOrchestrator:
             "optimization_result": None
         }
 
-    async def process_cv(self, cv_text: str) -> Resume:
+    async def process_cv(self, cv_file: bytes) -> Resume:
         """Parses CV into a structured Resume object."""
-        self.state["cv_text"] = cv_text
+        self.state["cv_text"] = resume_parser(cv_file)
         
         result = await parse_cv_node(self.state)
         self.state.update(result)
