@@ -1,9 +1,10 @@
 import io
+
 import pdfplumber
 
-def resume_parser(pdf_bytes: bytes) -> str:
+def resume_parser(file: bytes) -> str:
     text = []
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+    with pdfplumber.open(io.BytesIO(file)) as pdf:
         for page in pdf.pages:
             page_text = page.extract_text()
             if page_text:

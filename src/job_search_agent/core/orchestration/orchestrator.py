@@ -20,10 +20,9 @@ class JobSearchOrchestrator:
             "optimization_result": None
         }
 
-    async def process_cv(self, pdf: bytes) -> Resume:
+    async def process_cv(self, cv_file: bytes) -> Resume:
         """Parses CV into a structured Resume object."""
-        cv_text = resume_parser(pdf)
-        self.state["cv_text"] = cv_text
+        self.state["cv_text"] = resume_parser(cv_file)
         
         result = await parse_cv_node(self.state)
         self.state.update(result)
