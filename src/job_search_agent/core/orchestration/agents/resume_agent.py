@@ -7,16 +7,16 @@ from job_search_agent.core.orchestration.models.resume_models import Resume
 
 class ResumeAgent(BaseAgent):
     def __init__(self):
-        super().__init__('free')
+        super().__init__('basic')
         self.prompt = RESUME_PARSER_PROMPT
-        self.structured_llm = self.get_structured_llm(Resume)
 
     @traceable
     async def parse_cv(self, cv_text: str) -> Resume:
         return await self.run(cv=cv_text)
 
     async def run(self, cv: str) -> Resume:
-        chain = self.prompt | self.structured_llm
-        response = await chain.ainvoke({"cv": cv})
-        print(f"Extracted Data: {response}")
+        prompt_text = self.prompt.format(cv=cv)
+        structured_llm = self.get_structured_llm(len(prompt_text), Resume)
+
+        response = await structured_llm.ainvoke(prompt_text)
         return response

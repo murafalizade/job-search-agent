@@ -5,11 +5,14 @@ from job_search_agent.core.llm_gateways.gateway import get_gateway
 
 class BaseAgent(ABC):
     def __init__(self, complexity: str = "free"):
-        model_gateway = get_gateway()
-        self.llm = model_gateway.get_llm(complexity)
+        self.complexity = complexity
 
-    def get_structured_llm(self, schema: Any):
-        return self.llm.with_structured_output(schema)
+    def get_llm(self, prompt_tokens: int):
+        return get_gateway().get_llm(prompt_tokens, self.complexity)
+
+    def get_structured_llm(self, prompt_tokens: int, schema: Any):
+        llm = get_gateway().get_llm(prompt_tokens, self.complexity)
+        return llm.with_structured_output(schema)
 
     @abstractmethod
     def run(self, *args: Any, **kwargs: Any) -> Any:
