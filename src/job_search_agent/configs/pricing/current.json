@@ -7,6 +7,19 @@
       "https://ai.google.dev/gemini-api/docs/models/gemini#model-variations"]
   },
   "models": {
+    "gemma-3-27b": {
+      "task_complexity": "free",
+        "pricing": {
+          "input_per_million": 0,
+          "output_per_million": 0,
+          "batch_discount": 0
+      },
+      "limits": {
+        "free_tier": { "rpm": 30, "rpd": 14400, "tpm": 15000 },
+        "paid_tier": { "rpm": 2000, "tpm": 4000000 }
+      },
+      "context_window": 128000
+    },
     "gemini-2.5-flash-lite": {
       "task_complexity": "basic",
       "pricing": {

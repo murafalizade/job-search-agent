@@ -34,7 +34,7 @@ class ModelRouter:
         return False
 
     def get_model(self, complexity: str, prompt_tokens: int):
-        target_model = "gemini-2.5-flash-lite"  # Default
+        target_model = "gemma-3-27b"  # Default
         for name, details in self.config['models'].items():
             if details['task_complexity'] == complexity:
                 target_model = name
@@ -49,7 +49,7 @@ class ModelRouter:
             self.history[target_model].append(time.time())
             return target_model
 
-        return "gemini-2.5-flash-lite"
+        return target_model
 
 def get_model_router():
     return ModelRouter()

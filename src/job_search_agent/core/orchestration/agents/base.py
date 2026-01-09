@@ -1,17 +1,12 @@
-from job_search_agent.configs.setting import get_settings
 from abc import ABC, abstractmethod
 from typing import Any
-from langchain.chat_models import init_chat_model
 
+from job_search_agent.core.llm_gateways.gateway import get_gateway
 
 class BaseAgent(ABC):
-    def __init__(self, model_name: str = "google_genai:gemini-2.5-flash"):
-        settings = get_settings()
-        self.llm = init_chat_model(
-            model_name,
-            api_key=settings.GOOGLE_API_KEY.get_secret_value()
-        )
-
+    def __init__(self, complexity: str = "free"):
+        model_gateway = get_gateway()
+        self.llm = model_gateway.get_llm(complexity)
 
     def get_structured_llm(self, schema: Any):
         return self.llm.with_structured_output(schema)

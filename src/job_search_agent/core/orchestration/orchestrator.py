@@ -1,5 +1,8 @@
 from typing import List, Tuple
-from job_search_agent.core.orchestration.graph import create_job_search_graph, AgentState, parse_cv_node, rank_jobs_node, optimize_job_node
+
+from job_search_agent.core.orchestration.agents import ResumeAgent
+from job_search_agent.core.orchestration.agents.job_optimizer_agent import JobOptimizerAgent
+from job_search_agent.core.orchestration.agents.resume_ranking_agent import ResumeRankingAgent
 from job_search_agent.core.orchestration.models.resume_models import Resume
 from job_search_agent.core.orchestration.models.job_vacancy import JobVacancy
 from job_search_agent.core.orchestration.models.optimization_result import OptimizationResult
@@ -9,50 +12,29 @@ from job_search_agent.utils.resume_parser import resume_parser
 
 class JobSearchOrchestrator:
     def __init__(self):
-        self.graph = create_job_search_graph()
         self.gateway = get_gateway()
-        
-        self.state: AgentState = {
-            "cv_text": None,
-            "resume": None,
-            "ranked_jobs": [],
-            "selected_job_index": None,
-            "optimization_result": None
-        }
 
-    async def process_cv(self, cv_file: bytes) -> Resume:
+    @staticmethod
+    async def process_cv(cv_file: bytes) -> Resume:
         """Parses CV into a structured Resume object."""
-        self.state["cv_text"] = resume_parser(cv_file)
-        
-        result = await parse_cv_node(self.state)
-        self.state.update(result)
-        
-        return self.state["resume"]
+        cv_text = resume_parser(cv_file)
+        agent = ResumeAgent()
+        result = await agent.parse_cv(cv_text)
+        return result
 
-    async def find_jobs(self) -> List[Tuple[JobVacancy, float]]:
-        """Finds and ranks jobs based on the currently parsed resume."""
-        if not self.state["resume"]:
-            raise ValueError("No CV processed yet. Please upload a CV first.")
-            
-        result = await rank_jobs_node(self.state)
-        self.state.update(result)
-        
-        return self.state["ranked_jobs"]
+    @staticmethod
+    async def find_jobs(cv: Resume) -> List[Tuple[JobVacancy, float]]:
+        """Finds and ranks jobs based on currently parsed the CV."""
+        agent = ResumeRankingAgent()
+        ranked_jobs = await agent.run(cv)
+        return ranked_jobs
 
-    async def optimize_job(self, job_index: int) -> OptimizationResult:
+    @staticmethod
+    async def optimize_job(job: JobVacancy, cv: Resume) -> OptimizationResult:
         """Optimizes a specific job using the LangGraph optimize_job node."""
-        if not self.state["resume"]:
-            raise ValueError("No CV processed yet. Please upload a CV first.")
-        
-        if job_index < 0 or job_index >= len(self.state["ranked_jobs"]):
-            raise IndexError("Invalid job selection index.")
-            
-        self.state["selected_job_index"] = job_index
-
-        result_state = await optimize_job_node(self.state)
-        self.state.update(result_state)
-        
-        return self.state["optimization_result"]
+        agent = JobOptimizerAgent()
+        result = await agent.run(job, cv)
+        return result
 
     def get_usage_report(self) -> str:
         return self.gateway.cost_controller.get_spent()

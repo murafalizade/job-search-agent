@@ -15,7 +15,7 @@ class LLMGateway:
         self.cost_controller = CostController()
         self.model_router = get_model_router()
 
-    def get_llm(self, complexity: str = "basic"):
+    def get_llm(self, complexity: str = "free"):
         model_name = self.model_router.get_model(complexity)
         if model_name.startswith("gemini"):
             return init_chat_model(

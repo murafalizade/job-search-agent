@@ -1,7 +1,8 @@
 import logging
 from fastapi import APIRouter, HTTPException, status, Depends, UploadFile
-from job_search_agent.api.models import CVRequest, ProcessCVResponse, JobResponse, OptimizationRequest, FindJobsResponse
+from job_search_agent.api.models import ProcessCVResponse, JobResponse, OptimizeJobRequest, FindJobsResponse
 from job_search_agent.api.dependencies import get_orchestrator
+from job_search_agent.core.orchestration.models.resume_models import Resume
 from job_search_agent.core.orchestration.orchestrator import JobSearchOrchestrator
 from job_search_agent.core.orchestration.models.optimization_result import OptimizationResult
 
@@ -21,12 +22,9 @@ async def process_cv(
     """
     try:
         logger.info("Parsing CV...")
-        if file.content_type != "text/plain":
-            pdf_bytes = await file.read()
-            resume = await orchestrator.process_cv(pdf_bytes)
-            return ProcessCVResponse(resume=resume)
-        else:
-            raise ValueError("Invalid file type. Please upload a PDF file.")
+        pdf_bytes = await file.read()
+        resume = await orchestrator.process_cv(pdf_bytes)
+        return ProcessCVResponse(resume=resume)
     except Exception as e:
         logger.error(f"Error parsing CV: {str(e)}")
         raise HTTPException(
@@ -34,11 +32,12 @@ async def process_cv(
             detail=f"Failed to parse CV: {str(e)}"
         )
 
-@router.post("/find-jobs", 
+@router.post("/find-jobs",
              response_model=FindJobsResponse, 
              status_code=status.HTTP_200_OK,
              summary="Find matching jobs based on processed CV")
 async def find_jobs(
+    request: Resume,
     orchestrator: JobSearchOrchestrator = Depends(get_orchestrator)
 ):
     """
@@ -47,7 +46,7 @@ async def find_jobs(
     """
     try:
         logger.info("Searching for matching jobs...")
-        ranked_jobs = await orchestrator.find_jobs()
+        ranked_jobs = await orchestrator.find_jobs(request)
         
         formatted_jobs = [
             JobResponse(job=job, score=score) 
@@ -68,7 +67,7 @@ async def find_jobs(
              response_model=OptimizationResult, 
              summary="Optimize application for a specific job")
 async def optimize_job(
-    request: OptimizationRequest,
+    request: OptimizeJobRequest,
     orchestrator: JobSearchOrchestrator = Depends(get_orchestrator)
 ):
     """
@@ -76,8 +75,8 @@ async def optimize_job(
     found job vacancy. Requires a CV to have been processed first.
     """
     try:
-        logger.info(f"Optimizing for job index: {request.job_index}")
-        result = await orchestrator.optimize_job(request.job_index)
+        logger.info(f"Optimizing for job...")
+        result = await orchestrator.optimize_job(request.job, request.resume)
         return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

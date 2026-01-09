@@ -7,11 +7,15 @@ class CVRequest(BaseModel):
     cv_text: str = Field(description="The full text content of the candidate's CV",
                          example="I am a software engineer with 5 years of experience in React and Python...")
 
+class FindJobsRequest(BaseModel):
+    resume: Resume = Field(description="The structured resume data")
+
+class OptimizeJobRequest(BaseModel):
+    resume: Resume = Field(description="The structured resume data")
+    job: JobVacancy = Field(description="The job vacancy to optimize for")
+
 class OptimizationRequest(BaseModel):
-    job_index: int = Field(
-        description="The index of the job from the ranked list to optimize for",
-        example=0
-    )
+    job_index: int = Field(description='The index of the job from the ranked list to optimize for', example=0)
 
 class JobResponse(BaseModel):
     job: JobVacancy
