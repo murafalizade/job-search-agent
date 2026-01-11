@@ -13,8 +13,8 @@ class JobOptimizerAgent(BaseAgent):
 
     @traceable
     async def run(self, job: JobVacancy, resume: Resume) -> OptimizationResult:
-        prompt_text = self.prompt.format(job=job, resume=resume)
-        structured_llm = self.get_structured_llm(len(prompt_text), OptimizationResult)
-
+        prompt_text = self.prompt.format_messages(job=job, resume=resume)
+        prompt_string = self.prompt.format(job=job, resume=resume)
+        structured_llm = self.get_structured_llm(len(prompt_string), OptimizationResult)
         response = await structured_llm.ainvoke(prompt_text)
         return response

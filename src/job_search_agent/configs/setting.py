@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     LANGCHAIN_PROJECT: str = "default"
     LANGCHAIN_API_KEY: Optional[SecretStr] = None
     LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
+    TAVILY_API_KEY: SecretStr
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

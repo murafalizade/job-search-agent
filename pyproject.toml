@@ -24,6 +24,7 @@ dependencies = [
     "langsmith>=0.5.1",
     "torch",
     "python-multipart>=0.0.21",
+    "tavily-python>=0.7.17",
 ]
 
 [project.scripts]

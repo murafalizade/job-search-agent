@@ -6,5 +6,4 @@ class Resume(BaseModel):
     skills: List[str] = Field(description="Array of technical and soft skills")
     seniority: str = Field(description="Seniority level (e.g., Junior, Mid, Senior, Lead)")
     years_experience: int = Field(description="Total years of professional experience")
-    preferred_locations: List[str] = Field(description="List of preferred work locations or remote preferences")
-    keywords: List[str] = Field(description="Important keywords extracted from the CV for job matching")
+    keywords: List[str] = Field(description="Search-optimized keywords for job hunting (bilingual EN/AZ)")

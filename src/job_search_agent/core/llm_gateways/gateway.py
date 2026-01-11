@@ -1,4 +1,5 @@
 from langchain.chat_models import init_chat_model
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from job_search_agent.core.llm_gateways.cost_controller import CostController
 from job_search_agent.core.llm_gateways.model_router import get_model_router
@@ -18,8 +19,8 @@ class LLMGateway:
         model_name = self.model_router.get_model(complexity, prompt_tokens)
 
         if model_name.startswith("gemini"):
-            return init_chat_model(
-                model_name,
+            return ChatGoogleGenerativeAI(
+                model=model_name,
                 api_key=self.settings.GOOGLE_API_KEY.get_secret_value()
             )
         else:

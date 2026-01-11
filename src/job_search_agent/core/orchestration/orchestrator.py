@@ -23,7 +23,7 @@ class JobSearchOrchestrator:
         return result
 
     @staticmethod
-    async def find_jobs(cv: Resume) -> List[Tuple[JobVacancy, float]]:
+    async def find_jobs(cv: Resume) -> List[Tuple[JobVacancy, float, str]]:
         """Finds and ranks jobs based on currently parsed the CV."""
         agent = ResumeRankingAgent()
         ranked_jobs = await agent.run(cv)

@@ -15,8 +15,8 @@ class ResumeAgent(BaseAgent):
         return await self.run(cv=cv_text)
 
     async def run(self, cv: str) -> Resume:
-        prompt_text = self.prompt.format(cv=cv)
-        structured_llm = self.get_structured_llm(len(prompt_text), Resume)
-
+        prompt_text = self.prompt.format_messages(cv=cv)
+        prompt_string = self.prompt.format(cv=cv)
+        structured_llm = self.get_structured_llm(len(prompt_string), Resume)
         response = await structured_llm.ainvoke(prompt_text)
         return response

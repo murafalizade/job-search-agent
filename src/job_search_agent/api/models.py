@@ -20,6 +20,7 @@ class OptimizationRequest(BaseModel):
 class JobResponse(BaseModel):
     job: JobVacancy
     score: float = Field(description="Matching score (0.0 to 1.0)", example=0.85)
+    reason: str = Field(description="Explanation of why this job matches the resume", example="The candidate has relevant experience in Python and React.")
 
 class ProcessCVResponse(BaseModel):
     resume: Resume

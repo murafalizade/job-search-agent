@@ -32,7 +32,7 @@
         "paid_tier": { "rpm": 2000, "tpm": 4000000 }
       }
     },
-    "gemini-2.5-pro": {
+    "gemini-3-flash-preview": {
       "task_complexity": "advanced",
       "pricing": {
         "input_short_context": 1.25,
@@ -41,7 +41,7 @@
         "output_per_million": 10.00
       },
       "limits": {
-        "free_tier": { "rpm": 2, "rpd": 50, "tpm": 32000 },
+        "free_tier": { "rpm": 5, "rpd": 20, "tpm": 25000 },
         "paid_tier_t1": { "rpm": 150, "rpd": 1000 }
       }
     }

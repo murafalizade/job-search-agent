@@ -20,17 +20,17 @@ async def process_cv(
     """
     Takes raw CV text and parses it into structured data (Resume object).
     """
-    # try:
-    logger.info("Parsing CV...")
-    pdf_bytes = await file.read()
-    resume = await orchestrator.process_cv(pdf_bytes)
-    return ProcessCVResponse(resume=resume)
-    # except Exception as e:
-    #     logger.error(f"Error parsing CV: {str(e)}")
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"Failed to parse CV: {str(e)}"
-    #     )
+    try:
+        logger.info("Parsing CV...")
+        pdf_bytes = await file.read()
+        resume = await orchestrator.process_cv(pdf_bytes)
+        return ProcessCVResponse(resume=resume)
+    except Exception as e:
+        logger.error(f"Error parsing CV: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse CV: {str(e)}"
+        )
 
 @router.post("/find-jobs",
              response_model=FindJobsResponse, 
@@ -49,8 +49,8 @@ async def find_jobs(
         ranked_jobs = await orchestrator.find_jobs(request)
         
         formatted_jobs = [
-            JobResponse(job=job, score=score) 
-            for job, score in ranked_jobs
+            JobResponse(job=job, score=score, reason=reason) 
+            for job, score, reason in ranked_jobs
         ]
         
         return FindJobsResponse(ranked_jobs=formatted_jobs)

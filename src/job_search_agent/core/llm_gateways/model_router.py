@@ -1,4 +1,3 @@
-import json
 import time
 from collections import deque
 from pathlib import Path
@@ -34,7 +33,7 @@ class ModelRouter:
         return False
 
     def get_model(self, complexity: str, prompt_tokens: int):
-        target_model = "gemma-3-27b"  # Default
+        target_model = "gemini-2.5-flash-lite"  # Default
         for name, details in self.config['models'].items():
             if details['task_complexity'] == complexity:
                 target_model = name
