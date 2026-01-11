@@ -14,3 +14,7 @@ wheels/
 
 # Logs
 *.log
+src/.DS_Store
+src/job_search_agent/.DS_Store
+.DS_Store
+.idea/

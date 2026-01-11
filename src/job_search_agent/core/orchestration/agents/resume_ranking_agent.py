@@ -8,6 +8,7 @@ from job_search_agent.core.llm_gateways.prompts.matching_prompts import JOB_MATC
 from job_search_agent.configs.setting import get_settings
 from job_search_agent.core.orchestration.agents.base import BaseAgent
 from job_search_agent.core.orchestration.tools.search_tool.tavily_search_tool import TavilySearchTool
+from job_search_agent.core.orchestration.tools.search_tool.ddg_search_tool import DuckDuckGoSearchTool
 from job_search_agent.core.orchestration.tools.website_scrapper.engine import ScrapingEngine
 from job_search_agent.core.orchestration.models.job_vacancy import JobVacancy
 
@@ -15,7 +16,10 @@ class ResumeRankingAgent(BaseAgent):
     def __init__(self):
         super().__init__('advanced')
         settings = get_settings()
-        self.web_searcher = TavilySearchTool(max_results=10)
+        if settings.TAVILY_API_KEY:
+            self.web_searcher = TavilySearchTool(max_results=10)
+        else:
+            self.web_searcher = DuckDuckGoSearchTool(max_results=10)
         self.scraper = ScrapingEngine()
 
 

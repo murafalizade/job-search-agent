@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     LANGCHAIN_PROJECT: str = "default"
     LANGCHAIN_API_KEY: Optional[SecretStr] = None
     LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
-    TAVILY_API_KEY: SecretStr
+    TAVILY_API_KEY: Optional[SecretStr] = None
+
+    API_DOCS_URL: str = "/docs"
+    API_REDOC_URL: str = "/redoc"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
