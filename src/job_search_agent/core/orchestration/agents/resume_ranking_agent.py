@@ -10,6 +10,7 @@ from job_search_agent.core.orchestration.agents.base import BaseAgent
 from job_search_agent.core.orchestration.tools.search_tool.tavily_search_tool import TavilySearchTool
 from job_search_agent.core.orchestration.tools.search_tool.ddg_search_tool import DuckDuckGoSearchTool
 from job_search_agent.core.orchestration.tools.website_scrapper.engine import ScrapingEngine
+from job_search_agent.core.orchestration.tools.api_call.glorri_api_call import GlorriAPICall
 from job_search_agent.core.orchestration.models.job_vacancy import JobVacancy
 
 class ResumeRankingAgent(BaseAgent): 
@@ -21,6 +22,7 @@ class ResumeRankingAgent(BaseAgent):
         else:
             self.web_searcher = DuckDuckGoSearchTool(max_results=10)
         self.scraper = ScrapingEngine()
+        self.api_searcher = GlorriAPICall()
 
 
     def _build_resume_summary(self, cv: Resume) -> str:
@@ -66,18 +68,31 @@ class ResumeRankingAgent(BaseAgent):
                     unique_urls.update(url_list)
             return list(unique_urls)
 
-        urls = await search_all_keywords(search_queries)
+        search_urls = await search_all_keywords(search_queries)
         
-        if not urls:
-            return []
+        # API Search for URLs
+        api_urls = []
+        print(f"Searching via API for {len(search_queries)} queries...")
+        api_tasks = [self.api_searcher.scrape(query) for query in search_queries]
+        api_results = await asyncio.gather(*api_tasks, return_exceptions=True)
+        for res in api_results:
+            if isinstance(res, list):
+                api_urls.extend(res)
+            elif isinstance(res, Exception):
+                print(f"API search error: {res}")
 
-        async def scrape_all(urls: List[str]) -> List[JobVacancy]:
-            tasks = [self.scraper.scrape_url(url) for url in urls]
-            return await asyncio.gather(*tasks, return_exceptions=True)
-            
-        print(f"Scraping {len(urls)} potential jobs...")
-        results = await scrape_all(urls)
-        jobs = [job for job in results if isinstance(job, JobVacancy) and job is not None]
+        # Combine and unique URLs
+        all_urls = list(set(search_urls + api_urls))
+        
+        jobs = []
+        if all_urls:
+            async def scrape_all(urls: List[str]) -> List[JobVacancy]:
+                tasks = [self.scraper.scrape_url(url) for url in urls]
+                return await asyncio.gather(*tasks, return_exceptions=True)
+                
+            print(f"Scraping {len(all_urls)} potential jobs from combined sources...")
+            results = await scrape_all(all_urls)
+            jobs = [job for job in results if isinstance(job, JobVacancy) and job is not None]
         
         # Deduplicate jobs by (title + company)
         unique_jobs = []
@@ -94,7 +109,7 @@ class ResumeRankingAgent(BaseAgent):
         jobs = unique_jobs
 
         if not jobs:
-            print("No valid jobs scraped.")
+            print("No valid jobs found.")
             return []
         
         jobs_to_process = jobs[:15]
@@ -114,4 +129,3 @@ class ResumeRankingAgent(BaseAgent):
                 print(f"Reason: {reason}")
             
         return ranked_jobs
-       
